@@ -1,0 +1,27 @@
+<VirtualHost *:{{ http_port1 }}>
+    ServerAdmin webmaster@localhost
+    ServerName {{ http_host1 }}
+    ServerAlias www.{{ http_host1 }}
+    DocumentRoot /var/www/{{ http_host1 }}/app/public
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>
+<VirtualHost *:{{ http_port2 }}>
+    ServerAdmin webmaster@localhost
+    ServerName {{ http_host2 }}
+    ServerAlias www.{{ http_host2 }}
+    DocumentRoot /var/www/{{ http_host2 }}/app2/public
+    PassengerAppRoot /var/www/{{ http_host2 }}/app2
+    PassengerAppType node
+    PassengerStartupFile server.js
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>
+<VirtualHost *:{{ http_port3 }}>
+    ServerAdmin webmaster@localhost
+    ServerName {{ http_host3 }}
+    ServerAlias www.{{ http_host3 }}
+    DocumentRoot /var/www/{{ http_host3 }}/app/public
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>

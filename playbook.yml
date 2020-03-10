@@ -1,0 +1,130 @@
+##################################################
+# DO Community Playbooks: Apache on Ubuntu 18.04
+##################################################
+---
+- hosts: localhost
+  become: true
+  
+  
+  vars_files:
+    - vars/default.yml
+
+  tasks:
+    - name: Install prerequisites
+      apt: name={{ item }} update_cache=yes state=latest force_apt_get=yes
+      loop: [ 'aptitude' ]
+
+    - name: Install Apache
+      apt: name=apache2 update_cache=yes state=latest
+      
+    - name: Install nodejs 
+      apt: name=nodejs
+      apt: name=npm
+
+    - name: Install jinja2
+      apt: name=python-jinja2 state=latest update_cache=yes
+
+    - name: Add Passenger Packages
+      apt: name=dirmngr  state=latest update_cache=yes
+      apt: name=gnupg state=latest state=latest update_cache=yes
+
+    - name: add_key for passenger package
+      apt_key:
+          keyserver: hkp://keyserver.ubuntu.com:80
+          id: 561F9B9CAC40B2F7
+
+    - name: Install passeneger package
+      apt: name=apt-transport-https state=latest update_cache=yes
+      apt: name=ca-certificates state=latest update_cache=yes
+
+    - name: Set up Passenger
+      command: sh -c echo deb https://oss-binaries.phusionpassenger.com/apt/passenger bionic main > /etc/apt/sources.list.d/passenger.list
+
+    - name: passeneger_package installation
+      apt: name=update
+      apt: name=libapache2-mod-passenger
+
+    - name: enable passenegr
+      command: a2enmod passenger
+      command: apache2ctl restart
+
+    - name: Create document root1
+      file:
+        path: "/var/www/{{ http_host1 }}"
+        state: directory
+        owner: "{{ app_user }}"
+        mode: '0755'
+
+    - name: Create document root 2
+      file:
+        path: "/var/www/{{ http_host2 }}"
+        state: directory
+        owner: "{{ app_user }}"
+        mode: '0755'
+        
+        
+    - name: Create document root 3
+      file:
+        path: "/var/www/{{ http_host3 }}"
+        state: directory
+        owner: "{{ app_user }}"
+        mode: '0755'
+
+    - name: Copy index  page for app1
+      command: cp -r files/app /var/www/{{ http_host1 }}
+
+    - name: Copy index test page for app2
+      command: cp -r files/app2 /var/www/{{ http_host2 }}
+     
+    - name: Copy index test page for app3
+      command: cp -r files/app /var/www/{{ http_host3 }}
+     
+
+    - name: Go to the folder and execute command
+      command: chdir=/var/www/{{ http_host1 }}/app  npm install --production
+    - name: Go to the folder and execute command
+      command: chdir=/var/www/{{ http_host2 }}/app2  npm install --production
+      #command: chdir=/var/www/{{ http_host2 }}/app2  node server.js
+    - name: Go to the folder and execute command
+      command: chdir=/var/www/{{ http_host3 }}/app  npm install --production    
+
+    - name: Set up Apache virtualhost
+      template:
+        src: "files/apache.conf.j2"
+        dest: "/etc/apache2/sites-available/{{ http_conf }}"
+
+    - name: Enable new site
+      shell: /usr/sbin/a2ensite {{ http_conf }}
+      notify: Reload Apache
+
+    - name: Disable default Apache site
+      shell: /usr/sbin/a2dissite 000-default.conf
+      when: disable_default
+      notify: Reload Apache
+     
+    - name: "UFW - Allow HTTP on port {{ http_port1 }}"
+      ufw:
+        rule: allow
+        port: "{{ http_port1 }}"
+        proto: tcp
+
+    - name: "UFW - Allow HTTP on port {{ http_port2 }}"
+      ufw:
+        rule: allow
+        port: "{{ http_port2 }}"
+        proto: tcp
+    
+ 
+
+    
+
+  handlers:
+    - name: Reload Apache
+      service:
+        name: apache2
+        state: reloaded
+
+    - name: Restart Apache
+      service:
+        name: apache2
+        state: restarted
